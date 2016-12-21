@@ -20,7 +20,7 @@ public abstract class Retrieval {
      * be directly executed.
      */
     public abstract Node transformQuery(Node query) throws Exception;
-    public abstract ScoredDocument[] runQuery(Node query) throws Exception;
+    public abstract ScoredDocument[] runQuery(Node query, Parameters parameters) throws Exception;
     public abstract ScoredDocument[] runQuery(Node query, int requested) throws Exception;
     public abstract void close() throws IOException;
     

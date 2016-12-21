@@ -49,6 +49,7 @@ public class Search {
         public String url;
         public Map<String, String> metadata;
         public String summary;
+        public int alg;
     }
 
     public String getSummary(Document document, Set<String> query) throws IOException {
@@ -77,10 +78,10 @@ public class Search {
         return store.get(identifier);
     }
 
-    public SearchResult runQuery(String query, boolean summarize) throws Exception {
+    public SearchResult runQuery(String query, Parameters parameters, boolean summarize) throws Exception {
         Node tree = parseQuery(query, new Parameters());
         Node transformed = retrieval.transformQuery(tree);
-        ScoredDocument[] results = retrieval.runQuery(transformed);
+        ScoredDocument[] results = retrieval.runQuery(transformed, parameters);
         SearchResult result = new SearchResult();
         Set<String> queryTerms = StructuredQuery.findQueryTerms(tree);
         result.query = tree;

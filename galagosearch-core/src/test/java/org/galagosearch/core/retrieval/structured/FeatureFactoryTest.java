@@ -112,7 +112,7 @@ public class FeatureFactoryTest extends TestCase {
         FeatureFactory f = new FeatureFactory(new Parameters());
         ArrayList<StructuredIterator> iterators = new ArrayList();
         iterators.add(new NullExtentIterator());
-        StructuredIterator iterator = f.getIterator(new Node("od", "5"), iterators);
+        StructuredIterator iterator = f.getIterator(new Node("od", "5"), iterators,null);
         assertEquals(OrderedWindowIterator.class.getName(), iterator.getClass().getName());
     }
 

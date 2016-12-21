@@ -29,7 +29,7 @@ public class StructuredIndex {
 
     public StructuredIndex(String filename) throws IOException {
         manifest = new Parameters();
-        manifest.parse(filename + File.separator + "manifest");
+        manifest.parse(filename + File.separator + "manifest.xml");
         documentLengths = new DocumentLengthsReader(filename + File.separator + "documentLengths");
         documentNames = new DocumentNameReader(filename + File.separator + "documentNames");
 

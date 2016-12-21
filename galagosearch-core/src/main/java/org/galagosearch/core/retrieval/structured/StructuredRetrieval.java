@@ -29,8 +29,8 @@ public class StructuredRetrieval extends Retrieval {
         Parameters featureParameters = factoryParameters.clone();
         featureParameters.add("collectionLength", Long.toString(index.getCollectionLength()));
         featureParameters.add("documentCount", Long.toString(index.getDocumentCount()));
-        featureParameters.add("b", Double.toString(index.getB()));
-        featureParameters.add("k_1", Double.toString(index.getK_1()));
+        //featureParameters.add("b", Double.toString(index.getB()));
+        //featureParameters.add("k_1", Double.toString(index.getK_1()));
         featureFactory = new FeatureFactory(featureParameters);
     }
 
@@ -61,17 +61,17 @@ public class StructuredRetrieval extends Retrieval {
         return nodeType;
     }
     
-    public StructuredIterator createIterator(Node node) throws Exception {
+    public StructuredIterator createIterator(Node node, Parameters parameters) throws Exception {
         ArrayList<StructuredIterator> internalIterators = new ArrayList<StructuredIterator>();
 
         for (Node internalNode : node.getInternalNodes()) {
-            StructuredIterator internalIterator = createIterator(internalNode);
+            StructuredIterator internalIterator = createIterator(internalNode, parameters);
             internalIterators.add(internalIterator);
         }
         
         StructuredIterator iterator = index.getIterator(node);
         if (iterator == null) {
-            iterator = featureFactory.getIterator(node, internalIterators);
+            iterator = featureFactory.getIterator(node, internalIterators, parameters);
         }
         
         return iterator;
@@ -95,7 +95,7 @@ public class StructuredRetrieval extends Retrieval {
      */
     public ScoredDocument[] runQuery(Node queryTree, int requested) throws Exception {
         // construct the query iterators
-        ScoreIterator iterator = (ScoreIterator) createIterator(queryTree);
+        ScoreIterator iterator = (ScoreIterator) createIterator(queryTree, null);
 
         // now there should be an iterator at the root of this tree
         PriorityQueue<ScoredDocument> queue = new PriorityQueue<ScoredDocument>();
@@ -119,9 +119,9 @@ public class StructuredRetrieval extends Retrieval {
 
         return getArrayResults(queue);
     }
-    public ScoredDocument[] runQuery(Node queryTree) throws Exception {
+    public ScoredDocument[] runQuery(Node queryTree, Parameters parameters) throws Exception {
         // construct the query iterators
-        ScoreIterator iterator = (ScoreIterator) createIterator(queryTree);
+        ScoreIterator iterator = (ScoreIterator) createIterator(queryTree, parameters);
 
         // now there should be an iterator at the root of this tree
         PriorityQueue<ScoredDocument> queue = new PriorityQueue<ScoredDocument>();

@@ -22,7 +22,7 @@ import org.galagosearch.tupleflow.Parameters;
 /**
 * @author Your name
 */
-@RequiredStatistics (statistics = {"collectionLength", "documentCount","b","k_1"})
+@RequiredStatistics (statistics = {"collectionLength", "documentCount"})
 public class BM25Iterator extends ScoringFunctionIterator {
 	Parameters parameters;
 	public BM25Iterator(Parameters parameters, CountIterator iterator) throws IOException {

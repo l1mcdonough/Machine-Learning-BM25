@@ -291,7 +291,7 @@ public class BuildIndex {
                                            new XMLFragment.NodePathOrder()));
         stage.add(new InputStep("collectionLength"));
         Parameters p = new Parameters();
-        p.add("filename", indexPath + File.separator + "manifest");
+        p.add("filename", indexPath + File.separator + "manifest.xml");
         stage.add(new Step(ManifestWriter.class, p));
         return stage;
     }

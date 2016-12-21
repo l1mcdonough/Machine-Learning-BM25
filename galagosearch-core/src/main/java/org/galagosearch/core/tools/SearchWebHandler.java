@@ -8,43 +8,91 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.galagosearch.core.parse.Document;
 import org.galagosearch.core.tools.Search.SearchResult;
 import org.galagosearch.core.tools.Search.SearchResultItem;
+import org.galagosearch.tupleflow.Parameters;
 import org.galagosearch.tupleflow.Utility;
 import org.mortbay.jetty.handler.AbstractHandler;
+import org.w3c.dom.NodeList;
 import org.znerd.xmlenc.XMLOutputter;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 
 class RankAlg{
     double b, k_1, k_2; //new
     public RankAlg(){
+    	setValues();
+    }
+    public void randomize(){
+    	b += (Math.random() - .5) * 10;
+    	k_1 += (Math.random() -.5) * 10;
+    	k_2 += (Math.random() - .5) * 20;
+    }
+    public void setValues(){
     	try  {
     		BufferedReader br = new BufferedReader(new FileReader("values.txt"));
 			b = Double.parseDouble(br.readLine().split(" ")[2]);
     		k_1 = Double.parseDouble(br.readLine().split(" ")[2]);
     		k_2 = Double.parseDouble(br.readLine().split(" ")[2]);
+    		br.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
     }
-    public void randomize(){
-    	b += Math.random() - .5;
-    	k_1 += Math.random() -.5;
-    	k_2 += (Math.random() - .5) * 20;
+    public void writeValues(){
+    	try{
+    	    PrintWriter writer = new PrintWriter("values.txt", "UTF-8");
+    	    writer.println("b = " + b);
+    	    System.out.println("making b " + b);
+    	    writer.println("k_1 = " + k_1);
+    	    writer.println("k_2 = " + k_2);
+    	    writer.close();
+    	} catch (IOException e) {
+    	   // do something
+    	}
     }
-    public void printb(){
-    	System.out.println(b);
+    public void printFile(){
+    	DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    	try {
+    		DocumentBuilder builder = factory.newDocumentBuilder();
+    		String path = new File(System.getProperty("user.dir")).getParent();
+    		String manifest = path + File.separator + "corpus" + 
+					File.separator + "wiki-small.index" + File.separator + "manifest.xml";
+			BufferedReader br = new BufferedReader(new FileReader(path + File.separator + "corpus" + 
+					File.separator + "wiki-small.index" + File.separator + "manifest.xml"));
+			System.out.println(br.readLine());
+			br.close();
+			org.w3c.dom.Document doc = builder.parse(manifest);
+			NodeList nl = doc.getElementsByTagName("b");
+			System.out.println("b is equivalent to " + nl);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
     }
-    
+    public Parameters getParameters(){
+    	Parameters values = new Parameters();
+    	values.add("b", Double.toString(b));
+    	values.add("k_1", Double.toString(k_1));
+    	return values;
+    }
 }
 /**
  * <p>Handles web search requests against a Galago index.  Also handles XML requests for
@@ -82,9 +130,7 @@ class RankAlg{
  */
 public class SearchWebHandler extends AbstractHandler {
     Search search;
-    double b;
-    double k_1;
-    double k_2;
+    ArrayList<RankAlg> alg;
 
     public SearchWebHandler(Search search) {
         this.search = search;
@@ -110,6 +156,7 @@ public class SearchWebHandler extends AbstractHandler {
         request.getParameterMap();
         String identifier = request.getParameter("identifier");
         System.out.println("Rank Alg is" + request.getParameter("rankalg"));
+        alg.get(Integer.parseInt(request.getParameter("rankalg"))).writeValues();
         Document document = search.getDocument(identifier);
         response.setContentType("text/html; charset=UTF-8");
         PrintWriter writer = response.getWriter();
@@ -164,22 +211,67 @@ public class SearchWebHandler extends AbstractHandler {
         response.setContentType("image/png");
         retrieveImage(output);
     }
-    public void renderLink(SearchResultItem item, PrintWriter writer, int rankAlg) throws UnsupportedEncodingException, Exception{
+    public void renderLink(SearchResultItem item, PrintWriter writer) throws UnsupportedEncodingException, Exception{
     	writer.append("<div id=\"result\">\n");
         writer.append(String.format("<a href=\"document?identifier=%s&rankalg=%s\">%s</a><br/>" +
                                     "<div id=\"summary\">%s</div>\n" +
                                     "<div id=\"meta\">%s - %s</div>\n",
                                     item.identifier,
-                                    rankAlg,
+                                    item.alg,
                                     item.displayTitle,
                                     item.summary,
                                     scrub(item.identifier),
                                     scrub(item.url)));
         writer.append("</div>\n");
     }
+    public SearchResult mergeResults(SearchResult[] result){
+    	SearchResult retVal = new SearchResult();
+    	retVal.items = new ArrayList<SearchResultItem>();
+    	retVal.query = result[0].query;
+    	retVal.transformedQuery = result[0].transformedQuery;
+    	for (int i = 0; i < 3; i++){
+    		for (SearchResultItem item : result[i].items){
+    			item.alg = i;
+    		}
+    	}
+    	for (int rank = 0; rank < result[0].items.size(); rank++){
+    		ArrayList<SearchResult> liResult = new ArrayList<SearchResult>();
+    		for (int j = 0; j < 3; j++){
+    			liResult.add(result[j]);
+    		}
+    		for (int j = 0; j < 3; j++){
+    			Random rand = new Random();
+    			int randNum = rand.nextInt(liResult.size());
+    			SearchResultItem addingItem = liResult.get(randNum).items.get(rank);
+    			boolean add = true;
+    			for (SearchResultItem item : retVal.items){
+    				if (addingItem.identifier.equals(item.identifier)){
+    					add = false;
+    					break;
+    				}
+    			}
+    			if(add){
+    				retVal.items.add(liResult.get(randNum).items.get(rank));
+    			}
+    			liResult.remove(randNum);
+    		}
+    	}
+    	System.out.println("Produced " + retVal.items.size() + " items");
+    	return retVal;
+    }
 
     public void handleSearch(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        SearchResult result = performSearch(request);
+        alg = new ArrayList<RankAlg>();
+        for(int i = 0; i < 3; i++){
+        	alg.add(new RankAlg());
+        }
+        alg.get(1).randomize();
+        alg.get(2).randomize();
+        SearchResult[] indResults = new SearchResult[3];
+        for(int i = 0; i < 3; i++){
+        	indResults[i] = performSearch(request, alg.get(i).getParameters());
+        }
+        SearchResult result = mergeResults(indResults);
         response.setContentType("text/html");
         String displayQuery = scrub(request.getParameter("q"));
         String encodedQuery = URLEncoder.encode(request.getParameter("q"), "UTF-8");
@@ -221,11 +313,8 @@ public class SearchWebHandler extends AbstractHandler {
                       "Transformed Query", result.transformedQuery.toString()));
         writer.append("</table>");
         writer.append("</div>");
-        RankAlg alg = new RankAlg();
-        alg.randomize();
-        alg.printb();
         for (SearchResultItem item : result.items) {
-            renderLink(item, writer, 0);
+            renderLink(item, writer);
         }
 
         String startAtString = request.getParameter("start");
@@ -260,7 +349,7 @@ public class SearchWebHandler extends AbstractHandler {
     }
 
     public void handleSearchXML(HttpServletRequest request, HttpServletResponse response) throws IllegalStateException, IllegalArgumentException, IOException, Exception {
-        SearchResult result = performSearch(request);
+        SearchResult result = performSearch(request, null);
         PrintWriter writer = response.getWriter();
         XMLOutputter outputter = new XMLOutputter(writer, "UTF-8");
         response.setContentType("text/xml");
@@ -368,13 +457,13 @@ public class SearchWebHandler extends AbstractHandler {
         }
     }
 
-    private SearchResult performSearch(HttpServletRequest request) throws Exception {
+    private SearchResult performSearch(HttpServletRequest request, Parameters parameters) throws Exception {
         String query = request.getParameter("q");
         //String startAtString = request.getParameter("start");
         //String countString = request.getParameter("n");
         //int startAt = (startAtString == null) ? 0 : Integer.parseInt(startAtString);
         //int resultCount = (countString == null) ? 10 : Integer.parseInt(countString);
-        SearchResult result = search.runQuery(query, true);
+        SearchResult result = search.runQuery(query, parameters, true);
         return result;
     }
 }

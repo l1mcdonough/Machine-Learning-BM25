@@ -334,8 +334,9 @@ public class FeatureFactory {
      * getFeatureClass() is some kind of StructuredIterator (either a ScoreIterator,
      * ExtentIterator or CountIterator), it must take a Parameters object and an
      * ArrayList of DocumentDataIterators as parameters.
+     * @param parameters2 
      */
-    public StructuredIterator getIterator(Node node, ArrayList<StructuredIterator> childIterators) throws Exception {
+    public StructuredIterator getIterator(Node node, ArrayList<StructuredIterator> childIterators, Parameters parameters2) throws Exception {
         NodeType type = getNodeType(node);
         
         Constructor constructor = type.getConstructor();
@@ -357,6 +358,8 @@ public class FeatureFactory {
                 parametersCopy.add(statistic, parameters.get(statistic, null));
             }
         }
+        parametersCopy.add("b", parameters2.get("b"));
+        parametersCopy.add("k_1", parameters2.get("k_1"));
         return (StructuredIterator) constructor.newInstance(args);
     }
 

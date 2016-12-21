@@ -41,7 +41,7 @@ public class StructuredRetrievalTest extends TestCase {
         new File(partsPath).mkdir();
         
         // put in a generic manifest
-        new Parameters().write(tempPath + File.separator + "manifest");
+        new Parameters().write(tempPath + File.separator + "manifest.xml");
 
         // build an empty extent index
         Parameters extp = new Parameters();
@@ -112,7 +112,7 @@ public class StructuredRetrievalTest extends TestCase {
         Parameters mainParameters = new Parameters();
         mainParameters.add("collectionLength", "10000");
 
-        mainParameters.write(tempPath + File.separator + "manifest");
+        mainParameters.write(tempPath + File.separator + "manifest.xml");
         return tempPath;
     }
 

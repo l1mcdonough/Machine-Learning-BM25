@@ -56,7 +56,7 @@ public class RetrievalTestUtility {
         tempPath.mkdir();
 
         // put in a generic manifest
-        new Parameters().write(tempPath + File.separator + "manifest");
+        new Parameters().write(tempPath + File.separator + "manifest.xml");
 
         return tempPath;
     }
